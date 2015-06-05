@@ -281,6 +281,7 @@ static int Lmysql_select_db (lua_State *L) {
 
 // http://blog.csdn.net/xyang81/article/details/26861009
 
+// 获取一行数据
 static int Lmysql_fetch_one (lua_State *L) {
 
 	int flag, i; 
@@ -322,7 +323,24 @@ static int Lmysql_fetch_one (lua_State *L) {
 	return 2;
 }
 
+// 获取所有数据
+static int Lmysql_exec (lua_State *L) {
+    
+    int flag; 
+    lua_mysql_conn *my_conn = Mget_conn (L);
+    const char *query       = luaL_checkstring (L, 2);
+    
+    flag = mysql_real_query(my_conn->conn, query, strlen(query));  
+    if (flag) {  
+        lua_pushboolean(L, 0);
+        return 1;  
+    }  
+    
+    lua_pushboolean(L, 1);
+    return 1;
+}
 
+// 获取所有数据
 static int Lmysql_fetch_all (lua_State *L) {
 
     int flag, i, count; 
@@ -366,11 +384,8 @@ static int Lmysql_fetch_all (lua_State *L) {
         
         lua_settable(L,-3); 
     }  
-    
-  
-    
-    mysql_free_result(res); 
 
+    mysql_free_result(res); 
     lua_pushnumber(L, count);
     return 2;
 }
@@ -767,6 +782,7 @@ int luaopen_mysql (lua_State *L) {
     static const luaL_reg connection_methods[] = {
         { "error",   Lmysql_error },
         { "errno",   Lmysql_errno },
+        { "exec",    Lmysql_exec },
         { "fetch_one",   Lmysql_fetch_one },
         { "fetch_all",   Lmysql_fetch_all },
         { "select_db",   Lmysql_select_db },
