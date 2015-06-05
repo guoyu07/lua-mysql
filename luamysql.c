@@ -350,7 +350,6 @@ static int Lmysql_fetch_all (lua_State *L) {
     }
     
     res    = mysql_store_result(my_conn->conn); 
-    row    = mysql_fetch_row(res);
     fields = mysql_fetch_fields(res);  
     count  = 0;
     
