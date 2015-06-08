@@ -288,6 +288,7 @@ static int Lmysql_fetch_one (lua_State *L) {
     MYSQL_RES *res      = NULL;  
     MYSQL_ROW row       = NULL;  
     MYSQL_FIELD *fields = NULL;
+    unsigned long *lengths;
 
 	
     lua_mysql_conn *my_conn = Mget_conn (L);
@@ -308,13 +309,23 @@ static int Lmysql_fetch_one (lua_State *L) {
         return 2;
     }
     
-    res    = mysql_store_result(my_conn->conn); 
-    row    = mysql_fetch_row(res);
-    fields = mysql_fetch_fields(res);  
+    res     = mysql_store_result(my_conn->conn); 
+    row     = mysql_fetch_row(res);
+    fields  = mysql_fetch_fields(res);  
+    lengths = mysql_fetch_lengths(res);
 	for (i = 0; i < mysql_num_fields(res); i++)  
     {  
-        lua_pushstring(L, fields[i].name);
-        lua_pushstring(L, row[i]);
+        lua_pushlstring(L, fields[i].name, fields[i].name_length);
+        
+        if (row[i] == NULL)
+        {
+            lua_pushlstring (L, "NULL", 4);
+        }
+        else
+        {
+            lua_pushlstring (L, row[i], lengths[i]);
+        }
+        
         lua_rawset(L, -3);
     } 
 	mysql_free_result(res); 
@@ -347,6 +358,7 @@ static int Lmysql_fetch_all (lua_State *L) {
     MYSQL_RES *res      = NULL;  
     MYSQL_ROW row       = NULL;  
     MYSQL_FIELD *fields = NULL;
+    unsigned long *lengths;
 
     
     lua_mysql_conn *my_conn = Mget_conn (L);
@@ -371,14 +383,21 @@ static int Lmysql_fetch_all (lua_State *L) {
     fields = mysql_fetch_fields(res);  
     count  = 0;
     
+    
     while((row = mysql_fetch_row(res)))  
     {  
         lua_pushnumber(L, ++count);
         lua_newtable(L);
+        lengths = mysql_fetch_lengths(res);
         for (i = 0; i < mysql_num_fields(res); i++)  
         {  
-            lua_pushstring(L, fields[i].name);
-            lua_pushstring(L, row[i]);
+            lua_pushlstring(L, fields[i].name, fields[i].name_length);
+            
+            if (row[i] == NULL)
+                lua_pushlstring (L, "NULL", 4);
+            else
+                lua_pushlstring (L, row[i], lengths[i]);
+    
             lua_rawset(L, -3);
         }
         
